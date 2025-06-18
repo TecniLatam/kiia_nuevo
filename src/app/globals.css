@@ -1,0 +1,256 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.75rem;
+
+    /* Chart colors */
+    --chart-1: 0 0% 8%;       /* Black (Primary) */
+    --chart-2: 350 100% 94%;  /* Soft Pink (Accent) */
+    --chart-3: 0 0% 60%;      /* Mid Gray */
+    --chart-4: 0 0% 30%;      /* Darker Gray */
+    --chart-5: 350 80% 88%;   /* Lighter Pink */
+
+    /* Sidebar specific colors */
+    --sidebar-background: 0 0% 97%; /* Slightly off-white */
+    --sidebar-foreground: 0 0% 13%;    /* Black */
+    --sidebar-primary: 0 0% 8%;       /* Black */
+    --sidebar-primary-foreground: 0 0% 98%; /* Off-white */
+    --sidebar-accent: 0 0% 92%;       /* Light gray for hover */
+    --sidebar-accent-foreground: 0 0% 8%; /* Black text on hover */
+    --sidebar-border: 0 0% 88%;        /* Light Gray */
+    --sidebar-ring: 0 0% 8%;           /* Black */
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+
+    /* Chart colors for dark theme */
+    --chart-1: 0 0% 95%;      /* Off-white (Primary) */
+    --chart-2: 350 70% 40%;   /* Muted Pink (Accent) */
+    --chart-3: 0 0% 50%;      /* Mid Gray */
+    --chart-4: 0 0% 70%;      /* Lighter Gray */
+    --chart-5: 350 70% 50%;   /* Brighter Pink */
+    
+    /* Sidebar specific colors for dark theme */
+    --sidebar-background: 0 0% 10%; /* Slightly lighter black than main BG */
+    --sidebar-foreground: 0 0% 90%; /* Light Gray */
+    --sidebar-primary: 0 0% 95%;      /* Off-white */
+    --sidebar-primary-foreground: 0 0% 8%; /* Black */
+    --sidebar-accent: 0 0% 20%;       /* Dark gray for hover */
+    --sidebar-accent-foreground: 0 0% 95%; /* Light gray text on hover */
+    --sidebar-border: 0 0% 22%;         /* Dark Gray */
+    --sidebar-ring: 0 0% 95%;           /* Off-white */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    @apply font-body;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline;
+  }
+}
+
+/* Efectos de Glassmorphism */
+.glass {
+  @apply bg-background/80 backdrop-blur-lg border border-white/10;
+}
+
+/* Animaciones suaves */
+.hover-scale {
+  @apply transition-transform duration-300 hover:scale-105;
+}
+
+.hover-lift {
+  @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg;
+}
+
+/* Efectos de gradiente */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/80;
+}
+
+.gradient-border {
+  @apply relative before:absolute before:inset-0 before:p-[1px] before:bg-gradient-to-r before:from-primary before:to-primary/80 before:rounded-lg before:-z-10;
+}
+
+/* Efectos de hover modernos */
+.hover-glow {
+  @apply transition-all duration-300 hover:shadow-[0_0_15px_rgba(var(--primary),0.3)];
+}
+
+/* Animaciones de entrada */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* Efectos de scroll suave */
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Efectos de blur en hover */
+.hover-blur {
+  @apply transition-all duration-300 hover:backdrop-blur-md;
+}
+
+/* Efectos de neumorfismo */
+.neumorphic {
+  @apply bg-background shadow-[5px_5px_10px_rgba(0,0,0,0.1),-5px_-5px_10px_rgba(255,255,255,0.8)] rounded-lg;
+}
+
+/* Efectos de partículas */
+.particle-container {
+  @apply fixed inset-0 pointer-events-none z-0;
+}
+
+/* Efectos de cursor personalizado */
+.custom-cursor {
+  @apply cursor-none;
+}
+
+.custom-cursor-dot {
+  @apply fixed w-4 h-4 bg-primary rounded-full pointer-events-none mix-blend-difference z-50;
+}
+
+/* Efectos de texto */
+.text-gradient {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-primary;
+}
+
+/* Efectos de tarjeta */
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-xl hover:scale-[1.02];
+}
+
+/* Efectos de botón */
+.button-glow {
+  @apply relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-r before:from-primary/0 before:via-primary/20 before:to-primary/0 before:translate-x-[-200%] hover:before:translate-x-[200%] before:transition-transform before:duration-1000;
+}
+
+/* Efectos de scroll personalizado */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) var(--background);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-primary/20 rounded-full hover:bg-primary/30 transition-colors;
+}
+
+/* Nuevos efectos para las tarjetas de emociones */
+.emotion-card {
+  @apply relative overflow-hidden rounded-2xl p-6 text-center cursor-pointer transition-all duration-300;
+  @apply bg-white/5 backdrop-blur-lg border border-white/10;
+  @apply hover:shadow-lg hover:border-opacity-50;
+}
+
+.emotion-card::before {
+  content: '';
+  @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: translateX(-100%);
+}
+
+.emotion-card:hover::before {
+  @apply opacity-100;
+  transform: translateX(100%);
+}
+
+.emotion-icon {
+  @apply text-4xl mb-3 transition-transform duration-300;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+}
+
+.emotion-card:hover .emotion-icon {
+  @apply scale-110;
+}
+
+/* Efectos de brillo para elementos seleccionados */
+.selected-glow {
+  @apply shadow-lg;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+}
+
+/* Efectos de gradiente para botones */
+.gradient-button {
+  @apply relative overflow-hidden rounded-full px-8 py-3 text-lg font-semibold text-white;
+  background: linear-gradient(135deg, #ff4500, #ff6b35);
+  @apply hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300;
+}
+
+.gradient-button::before {
+  content: '';
+  @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transform: translateX(-100%);
+}
+
+.gradient-button:hover::before {
+  @apply opacity-100;
+  transform: translateX(100%);
+}
