@@ -1,0 +1,25 @@
+{
+    "usuario":{
+        "nombre": "Juan",
+        "email": "juan@gmail.com",
+        "password": "123456",
+        "planes_accion":[
+            {
+                "nombre": "Plan de accion 1",
+                "descripcion": "Descripcion del plan de accion 1",
+                "fecha_inicio": "2021-01-01",
+                "objectivo": "Objetivo del plan de accion 1",
+                "fecha_fin": "2021-01-01",
+                "estado": "activo",
+                "notas": "Notas del plan de accion 1",
+                "tareas":[
+                    {
+                        "nombre": "Tarea 1",
+                        "descripcion": "Descripcion de la tarea 1",
+                        "estado": "activo"
+                    }
+                ]
+            }
+        ]
+    }
+}

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef, useEffect, FormEvent } from 'react';
@@ -18,7 +17,7 @@ interface Message {
   timestamp: Date;
 }
 
-export function KaiChatInterface() { // Component name can remain generic or be changed if desired
+export function KiiaChatInterface() {
   const searchParams = useSearchParams();
   const initialCrisisMode = searchParams.get('mode') === 'crisis';
 
@@ -167,4 +166,4 @@ export function KaiChatInterface() { // Component name can remain generic or be 
       </form>
     </div>
   );
-}
+} 
