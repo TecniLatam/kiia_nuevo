@@ -5,7 +5,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function KiiaChatPage() {
   return (
-    <div className="container mx-auto py-2">
+    <div className="container mx-auto py-2 pb-32">
       <Card className="mb-6 bg-transparent border-none shadow-none">
         <CardHeader className="text-center px-0">
           <CardTitle className="text-3xl font-headline text-primary">Tu Espacio Seguro con KIIA</CardTitle>

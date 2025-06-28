@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpiar Caché - KIIA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .instructions {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Limpiar Caché - KIIA</h1>
+        <p>Si tienes problemas con el chat de KIIA, limpia la caché del navegador:</p>
+        
+        <div class="instructions">
+            <h3>📋 Instrucciones:</h3>
+            <ol>
+                <li>Presiona <strong>Ctrl + Shift + R</strong> (Windows) o <strong>Cmd + Shift + R</strong> (Mac)</li>
+                <li>O ve a <strong>F12 → Application → Storage → Clear storage</strong></li>
+                <li>O usa el botón de abajo para ir directamente al chat</li>
+            </ol>
+        </div>
+
+        <button onclick="clearCacheAndRedirect()">🧹 Limpiar y Ir al Chat</button>
+        <button onclick="window.open('http://localhost:9002/kiia-chat', '_blank')">💬 Ir al Chat de KIIA</button>
+        
+        <div id="success" class="success">
+            ✅ Caché limpiada. Redirigiendo al chat...
+        </div>
+    </div>
+
+    <script>
+        function clearCacheAndRedirect() {
+            // Intentar limpiar la caché
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                    }
+                });
+            }
+            
+            // Mostrar mensaje de éxito
+            document.getElementById('success').style.display = 'block';
+            
+            // Redirigir después de 2 segundos
+            setTimeout(() => {
+                window.location.href = 'http://localhost:9002/kiia-chat';
+            }, 2000);
+        }
+
+        // Limpiar caché automáticamente al cargar la página
+        window.addEventListener('load', function() {
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -29,7 +28,7 @@ export function EmotionalSOSButton() {
       <Button
         variant="destructive"
         size="lg"
-        className="fixed bottom-6 right-6 rounded-full shadow-xl p-4 h-auto"
+        className="fixed z-50 bottom-6 right-6 rounded-full shadow-xl p-4 h-auto"
         onClick={() => setIsModalOpen(true)}
         aria-label="Botón SOS Emocional"
       >
