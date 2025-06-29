@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Send, User, Bot, Mic, StopCircle, Volume2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, detectEmotionFromText } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import { KiiaAvatar } from '@/components/shared/kiia-avatar';
 
@@ -23,9 +23,45 @@ const SpeechRecognition =
   typeof window !== 'undefined' ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) : null;
 
 // Respuestas temporales para cuando no hay API configurada
-const getTemporaryResponse = (userInput: string): string => {
+const getTemporaryResponse = (userInput: string, initialEmotion?: string): string => {
   const input = userInput.toLowerCase();
   
+  // Si hay una emoción inicial, dar respuestas más específicas
+  if (initialEmotion) {
+    switch (initialEmotion) {
+      case 'triste':
+        if (input.includes('no sé') || input.includes('no se que hacer')) {
+          return "Entiendo que cuando estás triste puede ser difícil saber qué hacer. Te sugiero empezar con algo pequeño: ¿podrías tomar una ducha caliente o salir a caminar por 5 minutos? A veces los pequeños pasos son los más importantes.";
+        }
+        if (input.includes('solo') || input.includes('sola')) {
+          return "Sé que te sientes solo/a, pero quiero que sepas que no estás realmente solo/a. Estoy aquí contigo, y hay personas que se preocupan por ti. ¿Te gustaría que exploremos juntos formas de conectar con otros?";
+        }
+        break;
+      
+      case 'ansioso':
+        if (input.includes('preocupado') || input.includes('miedo')) {
+          return "La ansiedad puede hacer que todo se sienta más grande de lo que es. Vamos a hacer un ejercicio juntos: respira profundamente contando hasta 4, mantén por 4, exhala por 6. ¿Te gustaría que te guíe en esto?";
+        }
+        if (input.includes('no puedo') || input.includes('no puedo más')) {
+          return "Sé que te sientes abrumado/a, pero eres más fuerte de lo que crees. Vamos a dividir esto en pasos más pequeños. ¿Qué es lo más urgente que necesitas manejar ahora mismo?";
+        }
+        break;
+      
+      case 'enojado':
+        if (input.includes('molesto') || input.includes('frustrado')) {
+          return "Es natural sentir enojo cuando las cosas no salen como esperamos. ¿Te gustaría contarme qué pasó? A veces hablar sobre ello puede ayudar a procesar estos sentimientos de manera más saludable.";
+        }
+        break;
+      
+      case 'feliz':
+        if (input.includes('gracias') || input.includes('ayuda')) {
+          return "¡Me alegra mucho haber podido ayudarte! Es hermoso ver que estás de buen ánimo. ¿Hay algo más en lo que pueda asistirte para mantener esta energía positiva?";
+        }
+        break;
+    }
+  }
+  
+  // Respuestas generales
   if (input.includes('hola') || input.includes('buenos días') || input.includes('buenas')) {
     return "¡Hola! Soy KIIA, tu compañera de apoyo emocional. Estoy aquí para escucharte y ayudarte. ¿Cómo te sientes hoy?";
   }
@@ -64,6 +100,7 @@ const getTemporaryResponse = (userInput: string): string => {
 export function KiiaChatInterface() {
   const searchParams = useSearchParams();
   const initialCrisisMode = searchParams.get('mode') === 'crisis';
+  const emotionParam = searchParams.get('emotion');
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [userInput, setUserInput] = useState('');
@@ -79,6 +116,57 @@ export function KiiaChatInterface() {
 
   const scrollAreaRootRef = useRef<HTMLDivElement>(null);
 
+  const [emotion, setEmotion] = useState<'happy' | 'sad' | 'angry' | 'anxious' | 'neutral'>('neutral');
+
+  // Función para generar mensaje inicial según la emoción
+  const getInitialMessage = (emotion: string): string => {
+    switch (emotion) {
+      case 'feliz':
+        return "¡Hola! Veo que te sientes feliz hoy. ¡Qué maravilloso! Me encanta cuando las personas están de buen ánimo. ¿Qué te está haciendo sentir así? Me gustaría celebrar contigo este momento positivo.";
+      
+      case 'tranquilo':
+        return "Hola, noto que te sientes tranquilo. Es un estado muy hermoso y equilibrado. ¿Te gustaría compartir qué te está dando esa sensación de paz? Estoy aquí para acompañarte en este momento sereno.";
+      
+      case 'neutral':
+        return "Hola, veo que te sientes neutral hoy. A veces necesitamos esos momentos de calma para procesar nuestros pensamientos. ¿Hay algo en particular en lo que te gustaría reflexionar o hablar?";
+      
+      case 'triste':
+        return "Hola, veo que te sientes triste hoy. Quiero que sepas que es completamente normal tener días difíciles y que no estás solo. ¿Te gustaría contarme qué está pasando? Estoy aquí para escucharte sin juzgarte.";
+      
+      case 'ansioso':
+        return "Hola, noto que estás sintiendo ansiedad. Esta sensación puede ser muy abrumadora, pero juntos podemos manejarla. ¿Te gustaría hablar sobre qué te está preocupando? Respira profundamente, estoy aquí contigo.";
+      
+      case 'enojado':
+        return "Hola, veo que te sientes enojado. Es importante reconocer y expresar nuestras emociones de manera saludable. ¿Te gustaría contarme qué te está molestando? Estoy aquí para escucharte y ayudarte a procesar estos sentimientos.";
+      
+      default:
+        return "¡Hola! Soy KIIA, tu compañera de apoyo emocional. Estoy aquí para escucharte y ayudarte. ¿Cómo te sientes hoy?";
+    }
+  };
+
+  // Efecto para enviar mensaje inicial si hay emoción
+  useEffect(() => {
+    if (emotionParam && messages.length === 0) {
+      const initialMessage = getInitialMessage(emotionParam);
+      const kiiaMessage: Message = {
+        id: `kiia-initial-${Date.now()}`,
+        text: initialMessage,
+        sender: 'kiia',
+        timestamp: new Date(),
+      };
+      setMessages([kiiaMessage]);
+      
+      // Reproducir el mensaje inicial
+      setTimeout(() => {
+        try {
+          speak(initialMessage);
+        } catch (error) {
+          console.warn("Error speaking initial message:", error);
+        }
+      }, 500);
+    }
+  }, [emotionParam, messages.length]);
+
   // Efecto para asegurar que el código del cliente solo se ejecuta en el cliente
   useEffect(() => {
     setIsClient(true);
@@ -91,6 +179,61 @@ export function KiiaChatInterface() {
       } else {
         console.log("Speech recognition is available");
       }
+      
+      // Cargar las voces disponibles para síntesis de voz
+      const loadVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        console.log("🎤 Voces disponibles:", voices.map(v => `${v.name} (${v.lang})`));
+        
+        // Buscar voces femeninas en español
+        const femaleVoices = voices.filter(voice => 
+          voice.lang.includes('es') && 
+          (voice.name.toLowerCase().includes('maria') || 
+           voice.name.toLowerCase().includes('helena') ||
+           voice.name.toLowerCase().includes('ana') ||
+           voice.name.toLowerCase().includes('carmen') ||
+           voice.name.toLowerCase().includes('sofia') ||
+           voice.name.toLowerCase().includes('isabella') ||
+           voice.name.toLowerCase().includes('lucia') ||
+           voice.name.toLowerCase().includes('paula') ||
+           voice.name.toLowerCase().includes('elena') ||
+           voice.name.toLowerCase().includes('monica') ||
+           voice.name.toLowerCase().includes('patricia') ||
+           voice.name.toLowerCase().includes('claudia'))
+        );
+        
+        // Buscar voces masculinas para comparar
+        const maleVoices = voices.filter(voice => 
+          voice.lang.includes('es') && 
+          (voice.name.toLowerCase().includes('juan') ||
+           voice.name.toLowerCase().includes('carlos') ||
+           voice.name.toLowerCase().includes('pedro') ||
+           voice.name.toLowerCase().includes('miguel') ||
+           voice.name.toLowerCase().includes('antonio'))
+        );
+        
+        if (femaleVoices.length > 0) {
+          console.log("🎤 Voces femeninas encontradas:", femaleVoices.map(v => v.name));
+        } else {
+          console.log("🎤 No se encontraron voces femeninas específicas");
+        }
+        
+        if (maleVoices.length > 0) {
+          console.log("🎤 Voces masculinas encontradas:", maleVoices.map(v => v.name));
+        }
+        
+        // Mostrar todas las voces en español
+        const spanishVoices = voices.filter(voice => voice.lang.includes('es'));
+        console.log("🎤 Todas las voces en español:", spanishVoices.map(v => v.name));
+        
+        console.log("🎤 Configuración de voz optimizada para KIIA");
+      };
+      
+      // Cargar voces inmediatamente si están disponibles
+      loadVoices();
+      
+      // También cargar cuando las voces cambien
+      window.speechSynthesis.onvoiceschanged = loadVoices;
     }
   }, []);
 
@@ -117,9 +260,70 @@ export function KiiaChatInterface() {
 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'es-ES';
-    utterance.rate = 0.9;
-    utterance.pitch = 1.0;
+    
+    // Configuración mejorada para una voz más femenina y natural
+    utterance.rate = 0.85; // Velocidad ligeramente más lenta para mayor claridad
+    utterance.pitch = 1.5; // Tono muy alto para voz claramente femenina
     utterance.volume = 1.0;
+    
+    // Intentar seleccionar una voz femenina específica
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Priorizar voces femeninas con nombres específicos
+    let femaleVoice = voices.find(voice => 
+      voice.lang.includes('es') && 
+      (voice.name.toLowerCase().includes('maria') || 
+       voice.name.toLowerCase().includes('helena') ||
+       voice.name.toLowerCase().includes('ana') ||
+       voice.name.toLowerCase().includes('carmen') ||
+       voice.name.toLowerCase().includes('sofia') ||
+       voice.name.toLowerCase().includes('isabella') ||
+       voice.name.toLowerCase().includes('lucia') ||
+       voice.name.toLowerCase().includes('paula') ||
+       voice.name.toLowerCase().includes('elena') ||
+       voice.name.toLowerCase().includes('monica') ||
+       voice.name.toLowerCase().includes('patricia') ||
+       voice.name.toLowerCase().includes('claudia'))
+    );
+    
+    // Si no encuentra voces con nombres específicos, buscar cualquier voz que contenga "female" o "mujer"
+    if (!femaleVoice) {
+      femaleVoice = voices.find(voice => 
+        voice.lang.includes('es') && 
+        (voice.name.toLowerCase().includes('female') ||
+         voice.name.toLowerCase().includes('mujer') ||
+         voice.name.toLowerCase().includes('woman') ||
+         voice.name.toLowerCase().includes('girl'))
+      );
+    }
+    
+    // Si aún no encuentra, buscar voces en español que no sean claramente masculinas
+    if (!femaleVoice) {
+      femaleVoice = voices.find(voice => 
+        voice.lang.includes('es') && 
+        !voice.name.toLowerCase().includes('juan') &&
+        !voice.name.toLowerCase().includes('carlos') &&
+        !voice.name.toLowerCase().includes('pedro') &&
+        !voice.name.toLowerCase().includes('miguel') &&
+        !voice.name.toLowerCase().includes('antonio') &&
+        !voice.name.toLowerCase().includes('male') &&
+        !voice.name.toLowerCase().includes('hombre') &&
+        !voice.name.toLowerCase().includes('man') &&
+        !voice.name.toLowerCase().includes('boy')
+      );
+    }
+    
+    // Último recurso: cualquier voz en español
+    if (!femaleVoice) {
+      femaleVoice = voices.find(voice => voice.lang.includes('es'));
+    }
+    
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+      console.log("🎤 Usando voz:", femaleVoice.name, "para KIIA (pitch:", utterance.pitch, ")");
+    } else {
+      console.log("🎤 No se encontró voz en español, usando configuración por defecto");
+    }
     
     utterance.onstart = () => {
       setIsKiiaSpeaking(true);
@@ -178,8 +382,8 @@ export function KiiaChatInterface() {
         
         if (transcript && transcript.trim()) {
           // Procesar respuesta primero
-          const responseText = getTemporaryResponse(transcript);
-          console.log("🤖 KIIA response:", responseText);
+          const voiceResponseText = getTemporaryResponse(transcript, emotionParam || undefined);
+          console.log("🤖 KIIA response:", voiceResponseText);
           
           // Agregar mensaje del usuario con la respuesta de KIIA
           const userMessage: Message = {
@@ -187,7 +391,7 @@ export function KiiaChatInterface() {
             text: transcript,
             sender: 'user',
             timestamp: new Date(),
-            kiiaResponse: responseText, // Guardar la respuesta de KIIA
+            kiiaResponse: voiceResponseText, // Guardar la respuesta de KIIA
           };
           setMessages(prev => [...prev, userMessage]);
           
@@ -195,7 +399,7 @@ export function KiiaChatInterface() {
           setTimeout(() => {
             const kiiaMessage: Message = {
               id: `kiia-${Date.now()}`,
-              text: responseText,
+              text: voiceResponseText,
               sender: 'kiia',
               timestamp: new Date(),
             };
@@ -205,7 +409,7 @@ export function KiiaChatInterface() {
             // Restaurar la reproducción automática con manejo de errores
             try {
               console.log("🔊 Attempting to speak response...");
-              speak(responseText);
+              speak(voiceResponseText);
             } catch (error) {
               console.warn("⚠️ Speech failed, but chat continues normally");
             }
@@ -248,7 +452,7 @@ export function KiiaChatInterface() {
       console.error("❌ Error setting up speech recognition:", error);
       setSpeechError("Error al configurar el reconocimiento de voz");
     }
-  }, []);
+  }, [emotionParam]);
 
   // Handle microphone button click
   const handleMicClick = () => {
@@ -286,11 +490,20 @@ export function KiiaChatInterface() {
     }
   }, [messages]);
 
+  // Actualizar emoción cada vez que cambian los mensajes
+  useEffect(() => {
+    // Buscar el último mensaje relevante (de KIIA o usuario)
+    const lastRelevant = [...messages].reverse().find(m => m.text && m.text.trim());
+    if (lastRelevant) {
+      setEmotion(detectEmotionFromText(lastRelevant.text));
+    }
+  }, [messages]);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!userInput.trim()) return;
 
-    const responseText = getTemporaryResponse(userInput);
+    const responseText = getTemporaryResponse(userInput, emotionParam || undefined);
     const userMessage: Message = {
       id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       text: userInput,
@@ -342,7 +555,7 @@ export function KiiaChatInterface() {
       <div className="flex-1 flex flex-col justify-end p-4 relative min-h-0">
         {/* Fondo del chat con avatar centrado */}
         <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
-          <KiiaAvatar isSpeaking={isKiiaSpeaking} isListening={isRecording} />
+          <KiiaAvatar isSpeaking={isKiiaSpeaking} isListening={isRecording} emotion={emotion} />
         </div>
 
         {/* ScrollArea para los mensajes, sobre el fondo */}

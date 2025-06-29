@@ -5,83 +5,167 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface KiiaAvatarProps {
   isSpeaking?: boolean;
   isListening?: boolean;
+  emotion?: 'happy' | 'sad' | 'angry' | 'anxious' | 'neutral';
 }
 
-export function KiiaAvatar({ isSpeaking, isListening }: KiiaAvatarProps) {
-  // --- Variantes de Animación ---
+// Generador de partículas simples
+function NeonParticles({ color }: { color: string }) {
+  // 8 partículas en posiciones aleatorias
+  const particles = Array.from({ length: 8 }, (_, i) => ({
+    angle: (i * 360) / 8,
+    radius: 80 + Math.random() * 20,
+    size: 8 + Math.random() * 6,
+    duration: 3 + Math.random() * 2,
+  }));
+  return (
+    <g>
+      {particles.map((p, i) => (
+        <motion.circle
+          key={i}
+          cx={100 + p.radius * Math.cos((p.angle * Math.PI) / 180)}
+          cy={100 + p.radius * Math.sin((p.angle * Math.PI) / 180)}
+          r={p.size}
+          fill={color}
+          initial={{ opacity: 0.7, scale: 0.7 }}
+          animate={{
+            opacity: [0.7, 1, 0.7],
+            scale: [0.7, 1.2, 0.7],
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            repeatType: 'loop',
+            delay: i * 0.2,
+          }}
+          style={{ filter: `drop-shadow(0 0 8px ${color})` }}
+        />
+      ))}
+    </g>
+  );
+}
 
-  // 1. Animación de respiración para el cuerpo
-  const bodyVariants = {
-    initial: { scale: 1 },
-    breathing: {
-      scale: [1, 1.03, 1],
+export function KiiaAvatar({ isSpeaking, isListening, emotion = 'neutral' }: KiiaAvatarProps) {
+  // Paleta de colores neón por emoción
+  const emotionColors: Record<string, string> = {
+    happy: '#fff700',    // Amarillo neón
+    sad: '#00e1ff',      // Azul celeste neón
+    angry: '#ff0059',    // Rojo neón
+    anxious: '#a259ff',  // Violeta neón
+    neutral: '#00f0ff',  // Azul/verde neón
+  };
+
+  // Colores de acción
+  const actionColors = {
+    speaking: '#ff00e6', // Rosa neón
+    listening: '#39ff14', // Verde neón
+  };
+
+  // Color base según emoción
+  const baseColor = emotionColors[emotion] || emotionColors.neutral;
+  // Prioridad: hablando > escuchando > emoción
+  const activeColor = isSpeaking ? actionColors.speaking : isListening ? actionColors.listening : baseColor;
+  const haloColor = activeColor;
+  const glowStrength = isSpeaking || isListening ? 1.2 : 0.7;
+
+  // Animación de halo exterior
+  const haloVariants = {
+    initial: { opacity: 0.7, scale: 1 },
+    animate: {
+      opacity: [0.7, 1, 0.7],
+      scale: [1, 1.15, 1],
       transition: {
-        duration: 4,
-        ease: "easeInOut" as const,
+        duration: 2.5,
         repeat: Infinity,
+        repeatType: 'loop' as const
       },
     },
   };
 
-  // 2. Animación de parpadeo para los ojos
+  // Animación de pulso para el orbe
+  const orbVariants = {
+    initial: { scale: 1 },
+    pulse: {
+      scale: [1, 1.04, 1],
+      transition: {
+        duration: 3,
+        repeat: Infinity,
+        repeatType: 'loop' as const
+      },
+    },
+  };
+
+  // Animación de parpadeo para los ojos
   const eyeVariants = {
     blinking: {
       scaleY: [1, 0.1, 1],
       transition: {
         duration: 0.3,
         repeat: Infinity,
-        repeatDelay: 5, // Parpadea cada 5 segundos
-        ease: "easeInOut" as const,
+        repeatDelay: 5
       },
     },
   };
 
   return (
-    <div className="relative w-48 h-48">
+    <div className="relative w-60 h-60">
       <svg viewBox="0 0 200 200" className="w-full h-full">
-        {/* --- Definiciones de Filtros y Gradientes --- */}
         <defs>
-          {/* Gradiente principal para el cuerpo del avatar */}
-          <radialGradient id="avatarGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-            <stop offset="0%" style={{ stopColor: 'hsl(var(--primary))', stopOpacity: 0.8 }} />
-            <stop offset="100%" style={{ stopColor: 'hsl(var(--primary) / 0.3)', stopOpacity: 1 }} />
+          {/* Degradado neón para el orbe */}
+          <radialGradient id="orbGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
+            <stop offset="60%" stopColor={activeColor} stopOpacity="0.8" />
+            <stop offset="100%" stopColor="#000" stopOpacity="0.2" />
           </radialGradient>
-          
-          {/* 3. El filtro de resplandor ahora reacciona a 'isListening' */}
-          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <motion.feGaussianBlur in="SourceGraphic" stdDeviation={isListening ? 15 : 10} result="blur" transition={{ duration: 0.5 }}/>
+          {/* Halo exterior animado */}
+          <radialGradient id="haloGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={haloColor} stopOpacity="0.5" />
+            <stop offset="100%" stopColor={haloColor} stopOpacity="0" />
+          </radialGradient>
+          {/* Glow filter */}
+          <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation={18 * glowStrength} result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
         </defs>
-
-        {/* --- Cuerpo del Avatar --- */}
-        <motion.g 
-          filter="url(#glow)"
-          variants={bodyVariants}
-          animate="breathing"
-        >
-          <circle cx="100" cy="100" r="80" fill="url(#avatarGradient)" />
-        </motion.g>
-        
-        {/* --- Ojos --- */}
+        {/* Halo exterior */}
+        <motion.circle
+          cx="100"
+          cy="100"
+          r="90"
+          fill="url(#haloGradient)"
+          style={{ filter: `blur(8px)` }}
+          variants={haloVariants}
+          initial="initial"
+          animate="animate"
+        />
+        {/* Partículas neón */}
+        <NeonParticles color={haloColor} />
+        {/* Orbe principal */}
+        <motion.circle
+          cx="100"
+          cy="100"
+          r="70"
+          fill="url(#orbGradient)"
+          filter="url(#neonGlow)"
+          variants={orbVariants}
+          initial="initial"
+          animate="pulse"
+        />
+        {/* Ojos */}
         <motion.g className="eyes" variants={eyeVariants} animate="blinking">
-            {/* Ojo Izquierdo */}
-            <circle cx="80" cy="95" r="8" fill="white" />
-            {/* Ojo Derecho */}
-            <circle cx="120" cy="95" r="8" fill="white" />
+          <circle cx="80" cy="95" r="8" fill="#fff" />
+          <circle cx="120" cy="95" r="8" fill="#fff" />
         </motion.g>
-
-        {/* --- Boca --- */}
+        {/* Boca */}
         <AnimatePresence mode="wait">
           {isSpeaking ? (
-            // Boca abierta cuando está hablando
             <motion.path
               key="speaking"
               d="M 75 125 Q 100 145 125 125"
-              stroke="white"
+              stroke="#fff"
               strokeWidth="4"
               fill="none"
               initial={{ pathLength: 0, opacity: 0 }}
@@ -90,11 +174,10 @@ export function KiiaAvatar({ isSpeaking, isListening }: KiiaAvatarProps) {
               transition={{ duration: 0.3, ease: 'easeInOut' as const }}
             />
           ) : isListening ? (
-            // Boca pequeña cuando está escuchando
             <motion.path
               key="listening"
               d="M 85 130 Q 100 135 115 130"
-              stroke="white"
+              stroke="#fff"
               strokeWidth="3"
               fill="none"
               initial={{ pathLength: 0, opacity: 0 }}
@@ -103,11 +186,10 @@ export function KiiaAvatar({ isSpeaking, isListening }: KiiaAvatarProps) {
               transition={{ duration: 0.3, ease: 'easeInOut' as const }}
             />
           ) : (
-            // Boca normal cuando está en reposo
             <motion.path
               key="normal"
               d="M 80 130 Q 100 140 120 130"
-              stroke="white"
+              stroke="#fff"
               strokeWidth="3"
               fill="none"
               initial={{ pathLength: 0, opacity: 0 }}
