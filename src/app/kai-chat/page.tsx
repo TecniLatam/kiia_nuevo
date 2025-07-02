@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { KaiChatInterface } from '@/components/sections/kai-chat-interface';
+import { KiiaChatInterface } from '@/components/sections/kiia-chat-interface';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 
@@ -15,7 +15,7 @@ export default function KaiChatPage() {
         </CardHeader>
       </Card>
       <Suspense fallback={<div className="flex justify-center items-center h-[calc(100vh-18rem)]"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
-        <KaiChatInterface />
+        <KiiaChatInterface />
       </Suspense>
     </div>
   );
