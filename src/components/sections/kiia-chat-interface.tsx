@@ -9,6 +9,7 @@ import { Loader2, Send, User, Bot, Mic, StopCircle, Volume2 } from 'lucide-react
 import { cn, detectEmotionFromText } from '@/lib/utils';
 import { useSearchParams } from 'next/navigation';
 import { KiiaAvatar } from '@/components/shared/kiia-avatar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Message {
   id: string;
@@ -101,6 +102,7 @@ export function KiiaChatInterface() {
   const searchParams = useSearchParams();
   const initialCrisisMode = searchParams.get('mode') === 'crisis';
   const emotionParam = searchParams.get('emotion');
+  const isMobile = useIsMobile();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [userInput, setUserInput] = useState('');
@@ -112,6 +114,9 @@ export function KiiaChatInterface() {
   const [isKiiaSpeaking, setIsKiiaSpeaking] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
+  const [canRecord, setCanRecord] = useState(true);
+  const [shouldProcessResult, setShouldProcessResult] = useState(false);
+  const [currentTranscript, setCurrentTranscript] = useState('');
   const recognitionRef = useRef<any>(null);
 
   const scrollAreaRootRef = useRef<HTMLDivElement>(null);
@@ -244,6 +249,19 @@ export function KiiaChatInterface() {
       return;
     }
     
+    // Desactivar grabación mientras KIIA habla
+    setCanRecord(false);
+    
+    // Detener completamente el reconocimiento de voz si está activo
+    if (recognitionRef.current && isRecording) {
+      try {
+        recognitionRef.current.stop();
+        setIsRecording(false);
+      } catch (e) {
+        console.warn('No se pudo detener el reconocimiento de voz:', e);
+      }
+    }
+    
     // Verificar que la síntesis de voz esté disponible
     if (!window.speechSynthesis) {
       console.warn("Speech synthesis not available");
@@ -327,15 +345,28 @@ export function KiiaChatInterface() {
     
     utterance.onstart = () => {
       setIsKiiaSpeaking(true);
+      // Asegurar que el reconocimiento de voz esté completamente detenido
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          console.warn('Error stopping recognition on speech start:', e);
+        }
+      }
+      setIsRecording(false);
     };
     
     utterance.onend = () => {
       setIsKiiaSpeaking(false);
+      // Reactivar grabación después de que KIIA termine de hablar
+      setCanRecord(true);
     };
     
     utterance.onerror = (event) => {
       console.warn("Speech synthesis error:", event.error);
       setIsKiiaSpeaking(false);
+      // Reactivar grabación en caso de error
+      setCanRecord(true);
       // No hacer nada más, solo silenciar el error
     };
 
@@ -345,6 +376,7 @@ export function KiiaChatInterface() {
     } catch (error) {
       console.warn("Speech synthesis failed:", error);
       setIsKiiaSpeaking(false);
+      setCanRecord(true);
     }
   };
 
@@ -363,10 +395,16 @@ export function KiiaChatInterface() {
       const recognition = new SpeechRecognition();
       console.log("Recognition object created:", recognition);
       
-      recognition.continuous = false;
+      recognition.continuous = true; // Modo continuo para evitar cortes por pausas
       recognition.lang = 'es-ES';
-      recognition.interimResults = false;
+      recognition.interimResults = true; // Habilitar resultados intermedios para capturar texto en tiempo real
       recognition.maxAlternatives = 1;
+      
+      // Configuraciones adicionales para ser más tolerante con pausas
+      if (recognition.grammar) {
+        // Si el navegador soporta gramáticas, podemos configurar tiempo de espera
+        console.log("Grammar support available");
+      }
 
       recognition.onstart = () => {
         console.log("🎤 Speech recognition STARTED - Habla ahora!");
@@ -376,45 +414,18 @@ export function KiiaChatInterface() {
 
       recognition.onresult = async (event: any) => {
         console.log("🎯 Speech recognition RESULT:", event);
-        const transcript = event.results[event.results.length - 1][0].transcript;
-        console.log("📝 Transcript:", transcript);
-        setIsRecording(false);
         
-        if (transcript && transcript.trim()) {
-          // Procesar respuesta primero
-          const voiceResponseText = getTemporaryResponse(transcript, emotionParam || undefined);
-          console.log("🤖 KIIA response:", voiceResponseText);
-          
-          // Agregar mensaje del usuario con la respuesta de KIIA
-          const userMessage: Message = {
-            id: `user-voice-${Date.now()}`,
-            text: transcript,
-            sender: 'user',
-            timestamp: new Date(),
-            kiiaResponse: voiceResponseText, // Guardar la respuesta de KIIA
-          };
-          setMessages(prev => [...prev, userMessage]);
-          
-          setIsLoading(true);
-          setTimeout(() => {
-            const kiiaMessage: Message = {
-              id: `kiia-${Date.now()}`,
-              text: voiceResponseText,
-              sender: 'kiia',
-              timestamp: new Date(),
-            };
-            setMessages(prev => [...prev, kiiaMessage]);
-            setIsLoading(false);
-            
-            // Restaurar la reproducción automática con manejo de errores
-            try {
-              console.log("🔊 Attempting to speak response...");
-              speak(voiceResponseText);
-            } catch (error) {
-              console.warn("⚠️ Speech failed, but chat continues normally");
-            }
-          }, 1000);
+        // Acumular todo el texto transcrito
+        let fullTranscript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          fullTranscript += transcript + ' ';
         }
+        fullTranscript = fullTranscript.trim();
+        
+        // Actualizar el transcript actual para mostrar en tiempo real
+        setCurrentTranscript(fullTranscript);
+        console.log("📝 Current transcript:", fullTranscript);
       };
       
       recognition.onerror = (event: any) => {
@@ -456,19 +467,78 @@ export function KiiaChatInterface() {
 
   // Handle microphone button click
   const handleMicClick = () => {
-    console.log("Mic button clicked, isRecording:", isRecording);
+    console.log("Mic button clicked, isRecording:", isRecording, "canRecord:", canRecord);
     
     if (!recognitionRef.current) {
       setSpeechError("Reconocimiento de voz no disponible");
       return;
     }
 
+    // No permitir grabar si KIIA está hablando
+    if (!canRecord && !isRecording) {
+      setSpeechError("Espera a que KIIA termine de hablar");
+      return;
+    }
+
     try {
       if (isRecording) {
+        // Usuario detiene manualmente la grabación
+        console.log("🛑 User manually stopped recording");
+        
+        // Detener la grabación
         recognitionRef.current.stop();
+        
+        // Procesar el transcript actual que ya tenemos acumulado
+        setTimeout(() => {
+          if (currentTranscript && currentTranscript.trim()) {
+            console.log("📝 Processing current transcript:", currentTranscript);
+            
+            // Procesar respuesta
+            const voiceResponseText = getTemporaryResponse(currentTranscript, emotionParam || undefined);
+            console.log("🤖 KIIA response:", voiceResponseText);
+            
+            // Agregar mensaje del usuario
+            const userMessage: Message = {
+              id: `user-voice-${Date.now()}`,
+              text: currentTranscript,
+              sender: 'user',
+              timestamp: new Date(),
+              kiiaResponse: voiceResponseText,
+            };
+            setMessages(prev => [...prev, userMessage]);
+            
+            setIsLoading(true);
+            setTimeout(() => {
+              const kiiaMessage: Message = {
+                id: `kiia-${Date.now()}`,
+                text: voiceResponseText,
+                sender: 'kiia',
+                timestamp: new Date(),
+              };
+              setMessages(prev => [...prev, kiiaMessage]);
+              setIsLoading(false);
+              
+              try {
+                console.log("🔊 Attempting to speak response...");
+                speak(voiceResponseText);
+              } catch (error) {
+                console.warn("⚠️ Speech failed, but chat continues normally");
+              }
+            }, 1000);
+          } else {
+            console.log("📝 No transcript to process");
+          }
+          
+          // Resetear el transcript
+          setCurrentTranscript('');
+        }, 300); // Delay de 300ms para asegurar que termine la grabación
+        
       } else {
+        // Usuario inicia grabación
+        console.log("🎤 User started recording");
         setUserInput('');
         setSpeechError(null);
+        setCurrentTranscript(''); // Resetear el transcript
         recognitionRef.current.start();
       }
     } catch (error) {
@@ -551,40 +621,35 @@ export function KiiaChatInterface() {
 
   return (
     <div className="flex flex-col h-full min-h-screen bg-card overflow-hidden">
-      {/* Avatar y área de mensajes combinados */}
-      <div className="flex-1 flex flex-col justify-end p-4 relative min-h-0">
-        {/* Fondo del chat con avatar centrado */}
-        <div className="absolute inset-0 flex items-center justify-center z-0 pointer-events-none">
-          <KiiaAvatar isSpeaking={isKiiaSpeaking} isListening={isRecording} emotion={emotion} />
-        </div>
-
-        {/* ScrollArea para los mensajes, sobre el fondo */}
+      {/* Área de mensajes en la parte superior */}
+      <div className="flex-1 flex flex-col justify-end p-2 sm:p-4 relative min-h-0">
+        {/* ScrollArea para los mensajes */}
         <ScrollArea className="w-full h-full flex-1 z-10 min-h-0" ref={scrollAreaRootRef}>
-          <div className="space-y-4 pt-48">
+          <div className="space-y-3 sm:space-y-4 pb-4">
             {messages.filter(msg => msg.sender === 'user').map((msg) => (
               <div
                 key={msg.id}
                 className={cn(
-                  "flex items-end space-x-2 max-w-[80%]",
+                  "flex items-end space-x-2 max-w-[85%] sm:max-w-[80%]",
                   msg.sender === 'user' ? 'ml-auto justify-end' : 'mr-auto justify-start'
                 )}
               >
                 {msg.sender === 'kiia' && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-primary text-primary-foreground">
-                      <Bot size={20} />
+                  <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
+                      <Bot size={16} className="sm:w-5 sm:h-5" />
                     </AvatarFallback>
                   </Avatar>
                 )}
                 <div
                   className={cn(
-                    "p-3 rounded-lg shadow",
+                    "p-2 sm:p-3 rounded-lg shadow text-sm sm:text-base",
                     msg.sender === 'user'
                       ? 'bg-primary text-primary-foreground rounded-br-none'
                       : 'bg-muted text-muted-foreground rounded-bl-none'
                   )}
                 >
-                  <p className="text-sm font-body whitespace-pre-wrap">{msg.text}</p>
+                  <p className="font-body whitespace-pre-wrap leading-relaxed">{msg.text}</p>
                   <p className="text-xs text-right mt-1 opacity-70">
                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
@@ -597,31 +662,31 @@ export function KiiaChatInterface() {
                         size="icon"
                         variant="ghost"
                         onClick={() => speak(msg.kiiaResponse!)}
-                        className="h-8 w-8 bg-blue-500 hover:bg-blue-600 text-white shadow-md"
+                        className="h-6 w-6 sm:h-8 sm:w-8 bg-blue-500 hover:bg-blue-600 text-white shadow-md"
                         title="Escuchar respuesta de Kiia"
                       >
-                        <Volume2 className="h-4 w-4" />
+                        <Volume2 className="h-3 w-3 sm:h-4 sm:w-4" />
                         <span className="sr-only">Escuchar respuesta de Kiia</span>
                       </Button>
                     )}
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-accent text-accent-foreground">
-                        <User size={20} />
+                    <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                      <AvatarFallback className="bg-accent text-accent-foreground text-xs sm:text-sm">
+                        <User size={16} className="sm:w-5 sm:h-5" />
                       </AvatarFallback>
                     </Avatar>
                   </div>
                 )}
               </div>
             ))}
-            {isLoading && messages[messages.length -1]?.sender === 'user' && (
+            {isLoading && messages[messages.length - 1]?.sender === 'user' && (
               <div className="flex items-end space-x-2 mr-auto justify-start">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
-                    <Bot size={20} />
+                <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
+                    <Bot size={16} className="sm:w-5 sm:h-5" />
                   </AvatarFallback>
                 </Avatar>
-                <div className="p-3 rounded-lg shadow bg-muted text-muted-foreground rounded-bl-none">
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                <div className="p-2 sm:p-3 rounded-lg shadow bg-muted text-muted-foreground rounded-bl-none">
+                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                 </div>
               </div>
             )}
@@ -629,25 +694,54 @@ export function KiiaChatInterface() {
         </ScrollArea>
       </div>
 
+      {/* Avatar en posición fija en la parte inferior */}
+      <div className="flex-shrink-0 p-2 sm:p-4 flex justify-center bg-gradient-to-t from-card to-transparent">
+        <div className="relative">
+          <KiiaAvatar 
+            isSpeaking={isKiiaSpeaking} 
+            isListening={isRecording} 
+            emotion={emotion} 
+            size={isMobile ? 'small' : 'medium'}
+          />
+        </div>
+      </div>
+
       {/* Barra de entrada de texto */}
-      <form onSubmit={handleSubmit} className="p-4 border-t bg-card flex items-center space-x-2">
+      <form onSubmit={handleSubmit} className="p-2 sm:p-4 border-t bg-card flex items-center space-x-2">
         {speechError && (
-          <div className="absolute bottom-20 left-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded text-sm">
+          <div className="absolute bottom-16 sm:bottom-20 left-2 right-2 sm:left-4 sm:right-4 bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-xs sm:text-sm">
             {speechError}
           </div>
         )}
+        
+        {/* Mostrar transcript actual si está grabando */}
+        {isRecording && currentTranscript && (
+          <div className="absolute bottom-16 sm:bottom-20 left-2 right-2 sm:left-4 sm:right-4 bg-blue-100 border border-blue-400 text-blue-700 px-3 py-2 rounded text-xs sm:text-sm">
+            <strong>Escuchando:</strong> {currentTranscript}
+          </div>
+        )}
+        
         <Input
           type="text"
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           placeholder={isRecording ? "Escuchando..." : "Escribe o habla con KIIA..."}
-          className="flex-1 focus-visible:ring-primary font-body"
+          className="flex-1 focus-visible:ring-primary font-body text-sm sm:text-base"
           disabled={isLoading || isRecording}
           aria-label="Mensaje para KIIA"
         />
         {isClient && SpeechRecognition && (
-          <Button type="button" size="icon" onClick={handleMicClick} disabled={isLoading} className={cn("bg-purple-500 hover:bg-purple-600 text-white shadow-md", isRecording && "bg-red-500 hover:bg-red-600")}>
-            {isRecording ? <StopCircle className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+          <Button 
+            type="button" 
+            size="icon" 
+            onClick={handleMicClick} 
+            disabled={isLoading || !canRecord} 
+            className={cn(
+              "bg-purple-500 hover:bg-purple-600 text-white shadow-md h-8 w-8 sm:h-10 sm:w-10", 
+              isRecording && "bg-red-500 hover:bg-red-600"
+            )}
+          >
+            {isRecording ? <StopCircle className="h-4 w-4 sm:h-5 sm:w-5" /> : <Mic className="h-4 w-4 sm:h-5 sm:w-5" />}
             <span className="sr-only">{isRecording ? "Dejar de grabar" : "Grabar voz"}</span>
           </Button>
         )}
@@ -658,10 +752,10 @@ export function KiiaChatInterface() {
             onClick={() => {
               alert("Tu navegador no soporta reconocimiento de voz. Por favor, usa Chrome o Edge.");
             }}
-            className="bg-gray-400 hover:bg-gray-500 text-white"
+            className="bg-gray-400 hover:bg-gray-500 text-white h-8 w-8 sm:h-10 sm:w-10"
             title="Reconocimiento de voz no disponible"
           >
-            <Mic className="h-5 w-5" />
+            <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
         )}
         {speechError && (
@@ -669,14 +763,18 @@ export function KiiaChatInterface() {
             type="button" 
             size="icon" 
             onClick={() => setSpeechError(null)}
-            className="bg-red-500 hover:bg-red-600 text-white"
+            className="bg-red-500 hover:bg-red-600 text-white h-8 w-8 sm:h-10 sm:w-10"
             title="Cerrar mensaje de error"
           >
             <span className="text-xs">×</span>
           </Button>
         )}
-        <Button type="submit" disabled={isLoading || !userInput.trim()} className="bg-primary hover:bg-primary/90">
-          {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+        <Button 
+          type="submit" 
+          disabled={isLoading || !userInput.trim()} 
+          className="bg-primary hover:bg-primary/90 h-8 w-8 sm:h-10 sm:w-10"
+        >
+          {isLoading ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> : <Send className="h-4 w-4 sm:h-5 sm:w-5" />}
           <span className="sr-only">Enviar</span>
         </Button>
         <Button 
@@ -690,12 +788,12 @@ export function KiiaChatInterface() {
             }
           }}
           disabled={!messages.some(m => m.sender === 'kiia')}
-          className="bg-green-500 hover:bg-green-600 text-white border-green-500 relative"
+          className="bg-green-500 hover:bg-green-600 text-white border-green-500 relative h-8 w-8 sm:h-10 sm:w-10"
           title="Reproducir última respuesta de Kiia"
         >
-          <Volume2 className="h-5 w-5" />
+          <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
           {messages.filter(m => m.sender === 'kiia').length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center">
               {messages.filter(m => m.sender === 'kiia').length}
             </span>
           )}

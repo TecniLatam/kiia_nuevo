@@ -1,22 +1,36 @@
 "use client";
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
 
 interface KiiaAvatarProps {
   isSpeaking?: boolean;
   isListening?: boolean;
   emotion?: 'happy' | 'sad' | 'angry' | 'anxious' | 'neutral';
+  size?: 'small' | 'medium' | 'large';
 }
 
-// Generador de partículas simples
+// Generador de partículas simples con valores determinísticos
 function NeonParticles({ color }: { color: string }) {
-  // 8 partículas en posiciones aleatorias
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Valores determinísticos basados en el índice para evitar errores de hidratación
   const particles = Array.from({ length: 8 }, (_, i) => ({
     angle: (i * 360) / 8,
-    radius: 80 + Math.random() * 20,
-    size: 8 + Math.random() * 6,
-    duration: 3 + Math.random() * 2,
+    radius: 80 + (i * 2.5), // Valores determinísticos en lugar de Math.random()
+    size: 8 + (i % 3) * 2, // Valores determinísticos
+    duration: 3 + (i % 2) * 1.5, // Valores determinísticos
   }));
+
+  // No renderizar hasta que estemos en el cliente
+  if (!isClient) {
+    return <g></g>;
+  }
+
   return (
     <g>
       {particles.map((p, i) => (
@@ -44,7 +58,7 @@ function NeonParticles({ color }: { color: string }) {
   );
 }
 
-export function KiiaAvatar({ isSpeaking, isListening, emotion = 'neutral' }: KiiaAvatarProps) {
+export function KiiaAvatar({ isSpeaking, isListening, emotion = 'neutral', size = 'medium' }: KiiaAvatarProps) {
   // Paleta de colores neón por emoción
   const emotionColors: Record<string, string> = {
     happy: '#fff700',    // Amarillo neón
@@ -66,6 +80,15 @@ export function KiiaAvatar({ isSpeaking, isListening, emotion = 'neutral' }: Kii
   const activeColor = isSpeaking ? actionColors.speaking : isListening ? actionColors.listening : baseColor;
   const haloColor = activeColor;
   const glowStrength = isSpeaking || isListening ? 1.2 : 0.7;
+
+  // Tamaños según la propiedad size
+  const sizeClasses = {
+    small: 'w-16 h-16 sm:w-20 sm:h-20',
+    medium: 'w-60 h-60',
+    large: 'w-80 h-80'
+  };
+
+  const containerClass = sizeClasses[size];
 
   // Animación de halo exterior
   const haloVariants = {
@@ -107,7 +130,7 @@ export function KiiaAvatar({ isSpeaking, isListening, emotion = 'neutral' }: Kii
   };
 
   return (
-    <div className="relative w-60 h-60">
+    <div className={`relative ${containerClass}`}>
       <svg viewBox="0 0 200 200" className="w-full h-full">
         <defs>
           {/* Degradado neón para el orbe */}

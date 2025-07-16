@@ -47,23 +47,23 @@ export default function RootLayout({
             </SidebarFooter>
           </Sidebar>
           <SidebarInset>
-            <header className="sticky top-0 z-10 flex h-16 items-center justify-between glass border-b px-6">
+            <header className="sticky top-0 z-10 flex h-12 sm:h-16 items-center justify-between glass border-b px-3 sm:px-6">
               <div className="md:hidden">
                 <SidebarTrigger />
               </div>
-              <h1 className="text-xl font-headline font-semibold gradient-text hidden md:block">
+              <h1 className="text-lg sm:text-xl font-headline font-semibold gradient-text hidden md:block">
                 KIIA - Tu Faro Interior
               </h1>
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" size="icon" className="hover-lift">
-                  <Bell className="h-5 w-5" />
+              <div className="flex items-center gap-2 sm:gap-4">
+                <Button variant="ghost" size="icon" className="hover-lift h-8 w-8 sm:h-10 sm:w-10">
+                  <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="hover-lift">
-                  <Settings className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="hover-lift h-8 w-8 sm:h-10 sm:w-10">
+                  <Settings className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               </div>
             </header>
-            <main className="flex-1 p-6 overflow-auto animate-fadeInUp">
+            <main className="flex-1 p-2 sm:p-4 md:p-6 overflow-auto animate-fadeInUp">
               <div className="max-w-7xl mx-auto">
                 {children}
               </div>
