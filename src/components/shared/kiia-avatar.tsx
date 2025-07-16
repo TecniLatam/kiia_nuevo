@@ -83,7 +83,7 @@ export function KiiaAvatar({ isSpeaking, isListening, emotion = 'neutral', size 
 
   // Tamaños según la propiedad size
   const sizeClasses = {
-    small: 'w-16 h-16 sm:w-20 sm:h-20',
+    small: 'w-24 h-24 sm:w-20 sm:h-20',
     medium: 'w-60 h-60',
     large: 'w-80 h-80'
   };

@@ -384,6 +384,7 @@ export function KiiaChatInterface() {
   useEffect(() => {
     console.log("Setting up speech recognition...");
     console.log("SpeechRecognition available:", !!SpeechRecognition);
+    console.log("Is mobile:", isMobile);
     
     if (!SpeechRecognition) {
       console.warn("Speech recognition not supported in this browser.");
@@ -400,6 +401,14 @@ export function KiiaChatInterface() {
       recognition.interimResults = true; // Habilitar resultados intermedios para capturar texto en tiempo real
       recognition.maxAlternatives = 1;
       
+      // Configuraciones específicas para móvil
+      if (isMobile) {
+        console.log("🔧 Configurando reconocimiento de voz para móvil");
+        // En móvil, ser más conservador con los resultados
+        recognition.continuous = false; // En móvil, usar modo no continuo para evitar duplicación
+        recognition.interimResults = false; // Solo resultados finales en móvil
+      }
+      
       // Configuraciones adicionales para ser más tolerante con pausas
       if (recognition.grammar) {
         // Si el navegador soporta gramáticas, podemos configurar tiempo de espera
@@ -415,17 +424,26 @@ export function KiiaChatInterface() {
       recognition.onresult = async (event: any) => {
         console.log("🎯 Speech recognition RESULT:", event);
         
-        // Acumular todo el texto transcrito
-        let fullTranscript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          fullTranscript += transcript + ' ';
+        if (isMobile) {
+          // En móvil, manejar de manera más simple
+          const transcript = event.results[0][0].transcript.trim();
+          setCurrentTranscript(transcript);
+          console.log("📱 Mobile transcript:", transcript);
+        } else {
+          // En desktop, usar la lógica original mejorada
+          let finalTranscript = '';
+          
+          // Acumular todo el texto transcrito (lógica original)
+          for (let i = 0; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            finalTranscript += transcript + ' ';
+          }
+          finalTranscript = finalTranscript.trim();
+          
+          // Actualizar el transcript actual para mostrar en tiempo real
+          setCurrentTranscript(finalTranscript);
+          console.log("💻 Desktop transcript:", finalTranscript);
         }
-        fullTranscript = fullTranscript.trim();
-        
-        // Actualizar el transcript actual para mostrar en tiempo real
-        setCurrentTranscript(fullTranscript);
-        console.log("📝 Current transcript:", fullTranscript);
       };
       
       recognition.onerror = (event: any) => {
@@ -455,6 +473,11 @@ export function KiiaChatInterface() {
       recognition.onend = () => {
         console.log("⏹️ Speech recognition ENDED");
         setIsRecording(false);
+        
+        // En móvil, asegurar que no haya duplicación
+        if (isMobile && currentTranscript) {
+          console.log("📱 Mobile: Recognition ended, keeping transcript:", currentTranscript);
+        }
       };
       
       recognitionRef.current = recognition;
@@ -467,7 +490,7 @@ export function KiiaChatInterface() {
 
   // Handle microphone button click
   const handleMicClick = () => {
-    console.log("Mic button clicked, isRecording:", isRecording, "canRecord:", canRecord);
+    console.log("Mic button clicked, isRecording:", isRecording, "canRecord:", canRecord, "isMobile:", isMobile);
     
     if (!recognitionRef.current) {
       setSpeechError("Reconocimiento de voz no disponible");
@@ -485,22 +508,28 @@ export function KiiaChatInterface() {
         // Usuario detiene manualmente la grabación
         console.log("🛑 User manually stopped recording");
         
+        // Obtener el transcript final antes de detener
+        const finalTranscript = currentTranscript;
+        
         // Detener la grabación
         recognitionRef.current.stop();
         
-        // Procesar el transcript actual que ya tenemos acumulado
+        // En móvil, procesar inmediatamente
+        const processDelay = isMobile ? 100 : 300;
+        
+        // Procesar el transcript final
         setTimeout(() => {
-          if (currentTranscript && currentTranscript.trim()) {
-            console.log("📝 Processing current transcript:", currentTranscript);
+          if (finalTranscript && finalTranscript.trim()) {
+            console.log("📝 Processing final transcript:", finalTranscript);
             
             // Procesar respuesta
-            const voiceResponseText = getTemporaryResponse(currentTranscript, emotionParam || undefined);
+            const voiceResponseText = getTemporaryResponse(finalTranscript, emotionParam || undefined);
             console.log("🤖 KIIA response:", voiceResponseText);
             
             // Agregar mensaje del usuario
             const userMessage: Message = {
               id: `user-voice-${Date.now()}`,
-              text: currentTranscript,
+              text: finalTranscript,
               sender: 'user',
               timestamp: new Date(),
               kiiaResponse: voiceResponseText,
@@ -531,15 +560,25 @@ export function KiiaChatInterface() {
           
           // Resetear el transcript
           setCurrentTranscript('');
-        }, 300); // Delay de 300ms para asegurar que termine la grabación
+        }, processDelay);
         
       } else {
         // Usuario inicia grabación
         console.log("🎤 User started recording");
         setUserInput('');
         setSpeechError(null);
-        setCurrentTranscript(''); // Resetear el transcript
-        recognitionRef.current.start();
+        setCurrentTranscript(''); // Resetear el transcript completamente
+        
+        // En móvil, ser más cuidadoso con la limpieza
+        if (isMobile) {
+          // En móvil, no abortar, solo limpiar el transcript
+          console.log("📱 Mobile: Starting fresh recognition session");
+        } else {
+          // En desktop, usar la lógica original
+          setCurrentTranscript(''); // Resetear el transcript
+          recognitionRef.current.start();
+        }
+        
       }
     } catch (error) {
       console.error("Error handling mic click:", error);
