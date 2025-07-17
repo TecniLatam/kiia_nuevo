@@ -701,10 +701,10 @@ export function KiiaChatInterface() {
                         size="icon"
                         variant="ghost"
                         onClick={() => speak(msg.kiiaResponse!)}
-                        className="h-6 w-6 sm:h-8 sm:w-8 bg-blue-500 hover:bg-blue-600 text-white shadow-md"
+                        className="h-10 w-10 sm:h-8 sm:w-8 bg-blue-500 hover:bg-blue-600 text-white shadow-md"
                         title="Escuchar respuesta de Kiia"
                       >
-                        <Volume2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <Volume2 className="h-5 w-5 sm:h-4 sm:w-4" />
                         <span className="sr-only">Escuchar respuesta de Kiia</span>
                       </Button>
                     )}
@@ -746,7 +746,7 @@ export function KiiaChatInterface() {
       </div>
 
       {/* Barra de entrada de texto */}
-      <form onSubmit={handleSubmit} className="p-2 sm:p-4 border-t bg-card flex items-center space-x-2">
+      <form onSubmit={handleSubmit} className="p-2 sm:p-4 border-t bg-card flex items-center space-x-3">
         {speechError && (
           <div className="absolute bottom-16 sm:bottom-20 left-2 right-2 sm:left-4 sm:right-4 bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-xs sm:text-sm">
             {speechError}
@@ -765,7 +765,7 @@ export function KiiaChatInterface() {
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           placeholder={isRecording ? "Escuchando..." : "Escribe o habla con KIIA..."}
-          className="flex-1 focus-visible:ring-primary font-body text-sm sm:text-base"
+          className="flex-1 focus-visible:ring-primary font-body text-sm sm:text-base h-12 sm:h-10"
           disabled={isLoading || isRecording}
           aria-label="Mensaje para KIIA"
         />
@@ -776,11 +776,11 @@ export function KiiaChatInterface() {
             onClick={handleMicClick} 
             disabled={isLoading || !canRecord} 
             className={cn(
-              "bg-purple-500 hover:bg-purple-600 text-white shadow-md h-8 w-8 sm:h-10 sm:w-10", 
+              "bg-purple-500 hover:bg-purple-600 text-white shadow-md h-12 w-12 sm:h-10 sm:w-10", 
               isRecording && "bg-red-500 hover:bg-red-600"
             )}
           >
-            {isRecording ? <StopCircle className="h-4 w-4 sm:h-5 sm:w-5" /> : <Mic className="h-4 w-4 sm:h-5 sm:w-5" />}
+            {isRecording ? <StopCircle className="h-6 w-6 sm:h-5 sm:w-5" /> : <Mic className="h-6 w-6 sm:h-5 sm:w-5" />}
             <span className="sr-only">{isRecording ? "Dejar de grabar" : "Grabar voz"}</span>
           </Button>
         )}
@@ -791,10 +791,10 @@ export function KiiaChatInterface() {
             onClick={() => {
               alert("Tu navegador no soporta reconocimiento de voz. Por favor, usa Chrome o Edge.");
             }}
-            className="bg-gray-400 hover:bg-gray-500 text-white h-8 w-8 sm:h-10 sm:w-10"
+            className="bg-gray-400 hover:bg-gray-500 text-white h-12 w-12 sm:h-10 sm:w-10"
             title="Reconocimiento de voz no disponible"
           >
-            <Mic className="h-4 w-4 sm:h-5 sm:w-5" />
+            <Mic className="h-6 w-6 sm:h-5 sm:w-5" />
           </Button>
         )}
         {speechError && (
@@ -802,18 +802,18 @@ export function KiiaChatInterface() {
             type="button" 
             size="icon" 
             onClick={() => setSpeechError(null)}
-            className="bg-red-500 hover:bg-red-600 text-white h-8 w-8 sm:h-10 sm:w-10"
+            className="bg-red-500 hover:bg-red-600 text-white h-12 w-12 sm:h-10 sm:w-10"
             title="Cerrar mensaje de error"
           >
-            <span className="text-xs">×</span>
+            <span className="text-sm sm:text-xs">×</span>
           </Button>
         )}
         <Button 
           type="submit" 
           disabled={isLoading || !userInput.trim()} 
-          className="bg-primary hover:bg-primary/90 h-8 w-8 sm:h-10 sm:w-10"
+          className="bg-primary hover:bg-primary/90 h-12 w-12 sm:h-10 sm:w-10"
         >
-          {isLoading ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" /> : <Send className="h-4 w-4 sm:h-5 sm:w-5" />}
+          {isLoading ? <Loader2 className="h-6 w-6 sm:h-5 sm:w-5 animate-spin" /> : <Send className="h-6 w-6 sm:h-5 sm:w-5" />}
           <span className="sr-only">Enviar</span>
         </Button>
         <Button 
@@ -827,12 +827,12 @@ export function KiiaChatInterface() {
             }
           }}
           disabled={!messages.some(m => m.sender === 'kiia')}
-          className="bg-green-500 hover:bg-green-600 text-white border-green-500 relative h-8 w-8 sm:h-10 sm:w-10"
+          className="bg-green-500 hover:bg-green-600 text-white border-green-500 relative h-12 w-12 sm:h-10 sm:w-10"
           title="Reproducir última respuesta de Kiia"
         >
-          <Volume2 className="h-4 w-4 sm:h-5 sm:w-5" />
+          <Volume2 className="h-6 w-6 sm:h-5 sm:w-5" />
           {messages.filter(m => m.sender === 'kiia').length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center">
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 sm:h-5 sm:w-5 flex items-center justify-center">
               {messages.filter(m => m.sender === 'kiia').length}
             </span>
           )}
