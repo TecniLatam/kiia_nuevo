@@ -569,10 +569,9 @@ export function KiiaChatInterface() {
         setSpeechError(null);
         setCurrentTranscript(''); // Resetear el transcript completamente
         
-        // En móvil, ser más cuidadoso con la limpieza
         if (isMobile) {
-          // En móvil, no abortar, solo limpiar el transcript
-          console.log("📱 Mobile: Starting fresh recognition session");
+          // En móvil, iniciar el reconocimiento de voz
+          recognitionRef.current.start();
         } else {
           // En desktop, usar la lógica original
           setCurrentTranscript(''); // Resetear el transcript
