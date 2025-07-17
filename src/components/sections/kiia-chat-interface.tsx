@@ -661,56 +661,56 @@ export function KiiaChatInterface() {
   return (
     <div className="flex flex-col h-full min-h-screen bg-card overflow-hidden">
       {/* Área de mensajes en la parte superior */}
-      <div className="flex-1 flex flex-col justify-end p-2 sm:p-4 relative min-h-0">
+      <div className={`flex-1 flex flex-col justify-end ${isMobile ? 'p-4' : 'p-2 sm:p-4'} relative min-h-0`}>
         {/* ScrollArea para los mensajes */}
         <ScrollArea className="w-full h-full flex-1 z-10 min-h-0" ref={scrollAreaRootRef}>
-          <div className="space-y-3 sm:space-y-4 pb-4">
+          <div className={`${isMobile ? 'space-y-5' : 'space-y-3 sm:space-y-4'} pb-4`}>
             {messages.filter(msg => msg.sender === 'user').map((msg) => (
               <div
                 key={msg.id}
                 className={cn(
-                  "flex items-end space-x-2 max-w-[85%] sm:max-w-[80%]",
+                  `${isMobile ? 'flex items-end space-x-3 max-w-[95%]' : 'flex items-end space-x-2 max-w-[85%] sm:max-w-[80%]'} `,
                   msg.sender === 'user' ? 'ml-auto justify-end' : 'mr-auto justify-start'
                 )}
               >
                 {msg.sender === 'kiia' && (
-                  <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                  <Avatar className={isMobile ? 'h-10 w-10' : 'h-6 w-6 sm:h-8 sm:w-8'}>
                     <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
-                      <Bot size={16} className="sm:w-5 sm:h-5" />
+                      <Bot size={isMobile ? 24 : 16} className={isMobile ? 'w-6 h-6' : 'sm:w-5 sm:h-5'} />
                     </AvatarFallback>
                   </Avatar>
                 )}
                 <div
                   className={cn(
-                    "p-2 sm:p-3 rounded-lg shadow text-sm sm:text-base",
+                    `${isMobile ? 'p-4 text-base' : 'p-2 sm:p-3 text-sm sm:text-base'} rounded-lg shadow min-w-0 flex-1`,
                     msg.sender === 'user'
                       ? 'bg-primary text-primary-foreground rounded-br-none'
                       : 'bg-muted text-muted-foreground rounded-bl-none'
                   )}
                 >
-                  <p className="font-body whitespace-pre-wrap leading-relaxed">{msg.text}</p>
-                  <p className="text-xs text-right mt-1 opacity-70">
+                  <p className="font-body whitespace-pre-wrap leading-relaxed break-words">{msg.text}</p>
+                  <p className="text-xs text-right mt-2 opacity-70">
                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
                 {msg.sender === 'user' && (
-                  <div className="flex items-center space-x-1">
+                  <div className={isMobile ? 'flex items-center space-x-2' : 'flex items-center space-x-1'}>
                     {msg.kiiaResponse && (
                       <Button
                         type="button"
                         size="icon"
                         variant="ghost"
                         onClick={() => speak(msg.kiiaResponse!)}
-                        className="h-10 w-10 sm:h-8 sm:w-8 bg-blue-500 hover:bg-blue-600 text-white shadow-md"
+                        className={isMobile ? 'h-14 w-14 bg-blue-500 hover:bg-blue-600 text-white shadow-md' : 'h-10 w-10 sm:h-8 sm:w-8 bg-blue-500 hover:bg-blue-600 text-white shadow-md'}
                         title="Escuchar respuesta de Kiia"
                       >
-                        <Volume2 className="h-5 w-5 sm:h-4 sm:w-4" />
+                        <Volume2 className={isMobile ? 'h-7 w-7' : 'h-5 w-5 sm:h-4 sm:w-4'} />
                         <span className="sr-only">Escuchar respuesta de Kiia</span>
                       </Button>
                     )}
-                    <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                    <Avatar className={isMobile ? 'h-10 w-10' : 'h-6 w-6 sm:h-8 sm:w-8'}>
                       <AvatarFallback className="bg-accent text-accent-foreground text-xs sm:text-sm">
-                        <User size={16} className="sm:w-5 sm:h-5" />
+                        <User size={isMobile ? 24 : 16} className={isMobile ? 'w-6 h-6' : 'sm:w-5 sm:h-5'} />
                       </AvatarFallback>
                     </Avatar>
                   </div>
@@ -718,14 +718,14 @@ export function KiiaChatInterface() {
               </div>
             ))}
             {isLoading && messages[messages.length - 1]?.sender === 'user' && (
-              <div className="flex items-end space-x-2 mr-auto justify-start">
-                <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+              <div className={isMobile ? 'flex items-end space-x-3 mr-auto justify-start' : 'flex items-end space-x-2 mr-auto justify-start'}>
+                <Avatar className={isMobile ? 'h-10 w-10' : 'h-6 w-6 sm:h-8 sm:w-8'}>
                   <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
-                    <Bot size={16} className="sm:w-5 sm:h-5" />
+                    <Bot size={isMobile ? 24 : 16} className={isMobile ? 'w-6 h-6' : 'sm:w-5 sm:h-5'} />
                   </AvatarFallback>
                 </Avatar>
-                <div className="p-2 sm:p-3 rounded-lg shadow bg-muted text-muted-foreground rounded-bl-none">
-                  <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                <div className={isMobile ? 'p-4 rounded-lg shadow bg-muted text-muted-foreground rounded-bl-none' : 'p-2 sm:p-3 rounded-lg shadow bg-muted text-muted-foreground rounded-bl-none'}>
+                  <Loader2 className={isMobile ? 'h-7 w-7 animate-spin' : 'h-4 w-4 sm:h-5 sm:w-5 animate-spin'} />
                 </div>
               </div>
             )}
@@ -734,38 +734,36 @@ export function KiiaChatInterface() {
       </div>
 
       {/* Avatar en posición fija en la parte inferior */}
-      <div className="flex-shrink-0 p-2 sm:p-4 flex justify-center bg-gradient-to-t from-card to-transparent">
+      <div className={`flex-shrink-0 ${isMobile ? 'p-4' : 'p-2 sm:p-4'} flex justify-center bg-gradient-to-t from-card to-transparent`}>
         <div className="relative">
           <KiiaAvatar 
             isSpeaking={isKiiaSpeaking} 
             isListening={isRecording} 
             emotion={emotion} 
-            size={isMobile ? 'small' : 'medium'}
+            size={isMobile ? 'large' : 'medium'}
           />
         </div>
       </div>
 
       {/* Barra de entrada de texto */}
-      <form onSubmit={handleSubmit} className="p-2 sm:p-4 border-t bg-card flex items-center space-x-3">
+      <form onSubmit={handleSubmit} className={`${isMobile ? 'p-4' : 'p-2 sm:p-4'} border-t bg-card flex items-center space-x-3`}>
         {speechError && (
-          <div className="absolute bottom-16 sm:bottom-20 left-2 right-2 sm:left-4 sm:right-4 bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-xs sm:text-sm">
+          <div className={`absolute ${isMobile ? 'bottom-24 left-4 right-4 text-base px-4 py-3' : 'bottom-16 sm:bottom-20 left-2 right-2 sm:left-4 sm:right-4 text-xs sm:text-sm px-3 py-2'} bg-red-100 border border-red-400 text-red-700 rounded shadow-lg`}>
             {speechError}
           </div>
         )}
-        
         {/* Mostrar transcript actual si está grabando */}
         {isRecording && currentTranscript && (
-          <div className="absolute bottom-16 sm:bottom-20 left-2 right-2 sm:left-4 sm:right-4 bg-blue-100 border border-blue-400 text-blue-700 px-3 py-2 rounded text-xs sm:text-sm">
+          <div className={`absolute ${isMobile ? 'bottom-24 left-4 right-4 text-base px-4 py-3' : 'bottom-16 sm:bottom-20 left-2 right-2 sm:left-4 sm:right-4 text-xs sm:text-sm px-3 py-2'} bg-blue-100 border border-blue-400 text-blue-700 rounded shadow-lg`}>
             <strong>Escuchando:</strong> {currentTranscript}
           </div>
         )}
-        
         <Input
           type="text"
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           placeholder={isRecording ? "Escuchando..." : "Escribe o habla con KIIA..."}
-          className="flex-1 focus-visible:ring-primary font-body text-sm sm:text-base h-12 sm:h-10"
+          className={`flex-1 focus-visible:ring-primary font-body ${isMobile ? 'text-base h-14 rounded-xl' : 'text-sm sm:text-base h-12 sm:h-10'} `}
           disabled={isLoading || isRecording}
           aria-label="Mensaje para KIIA"
         />
@@ -776,11 +774,11 @@ export function KiiaChatInterface() {
             onClick={handleMicClick} 
             disabled={isLoading || !canRecord} 
             className={cn(
-              "bg-purple-500 hover:bg-purple-600 text-white shadow-md h-12 w-12 sm:h-10 sm:w-10", 
-              isRecording && "bg-red-500 hover:bg-red-600"
+              isMobile ? 'bg-purple-500 hover:bg-purple-600 text-white shadow-lg h-14 w-14 rounded-xl text-xl' : 'bg-purple-500 hover:bg-purple-600 text-white shadow-md h-12 w-12 sm:h-10 sm:w-10',
+              isRecording && (isMobile ? 'bg-red-500 hover:bg-red-600 animate-pulse' : 'bg-red-500 hover:bg-red-600')
             )}
           >
-            {isRecording ? <StopCircle className="h-6 w-6 sm:h-5 sm:w-5" /> : <Mic className="h-6 w-6 sm:h-5 sm:w-5" />}
+            {isRecording ? <StopCircle className={isMobile ? 'h-7 w-7' : 'h-6 w-6 sm:h-5 sm:w-5'} /> : <Mic className={isMobile ? 'h-7 w-7' : 'h-6 w-6 sm:h-5 sm:w-5'} />}
             <span className="sr-only">{isRecording ? "Dejar de grabar" : "Grabar voz"}</span>
           </Button>
         )}
@@ -791,10 +789,10 @@ export function KiiaChatInterface() {
             onClick={() => {
               alert("Tu navegador no soporta reconocimiento de voz. Por favor, usa Chrome o Edge.");
             }}
-            className="bg-gray-400 hover:bg-gray-500 text-white h-12 w-12 sm:h-10 sm:w-10"
+            className={isMobile ? 'bg-gray-400 hover:bg-gray-500 text-white h-14 w-14 rounded-xl text-xl' : 'bg-gray-400 hover:bg-gray-500 text-white h-12 w-12 sm:h-10 sm:w-10'}
             title="Reconocimiento de voz no disponible"
           >
-            <Mic className="h-6 w-6 sm:h-5 sm:w-5" />
+            <Mic className={isMobile ? 'h-7 w-7' : 'h-6 w-6 sm:h-5 sm:w-5'} />
           </Button>
         )}
         {speechError && (
@@ -802,18 +800,18 @@ export function KiiaChatInterface() {
             type="button" 
             size="icon" 
             onClick={() => setSpeechError(null)}
-            className="bg-red-500 hover:bg-red-600 text-white h-12 w-12 sm:h-10 sm:w-10"
+            className={isMobile ? 'bg-red-500 hover:bg-red-600 text-white h-14 w-14 rounded-xl text-xl' : 'bg-red-500 hover:bg-red-600 text-white h-12 w-12 sm:h-10 sm:w-10'}
             title="Cerrar mensaje de error"
           >
-            <span className="text-sm sm:text-xs">×</span>
+            <span className={isMobile ? 'text-lg' : 'text-sm sm:text-xs'}>×</span>
           </Button>
         )}
         <Button 
           type="submit" 
           disabled={isLoading || !userInput.trim()} 
-          className="bg-primary hover:bg-primary/90 h-12 w-12 sm:h-10 sm:w-10"
+          className={isMobile ? 'bg-primary hover:bg-primary/90 h-14 w-14 rounded-xl text-xl shadow-lg' : 'bg-primary hover:bg-primary/90 h-12 w-12 sm:h-10 sm:w-10'}
         >
-          {isLoading ? <Loader2 className="h-6 w-6 sm:h-5 sm:w-5 animate-spin" /> : <Send className="h-6 w-6 sm:h-5 sm:w-5" />}
+          {isLoading ? <Loader2 className={isMobile ? 'h-7 w-7 animate-spin' : 'h-6 w-6 sm:h-5 sm:w-5 animate-spin'} /> : <Send className={isMobile ? 'h-7 w-7' : 'h-6 w-6 sm:h-5 sm:w-5'} />}
           <span className="sr-only">Enviar</span>
         </Button>
         <Button 
@@ -827,12 +825,12 @@ export function KiiaChatInterface() {
             }
           }}
           disabled={!messages.some(m => m.sender === 'kiia')}
-          className="bg-green-500 hover:bg-green-600 text-white border-green-500 relative h-12 w-12 sm:h-10 sm:w-10"
+          className={isMobile ? 'bg-green-500 hover:bg-green-600 text-white border-green-500 relative h-14 w-14 rounded-xl text-xl shadow-lg' : 'bg-green-500 hover:bg-green-600 text-white border-green-500 relative h-12 w-12 sm:h-10 sm:w-10'}
           title="Reproducir última respuesta de Kiia"
         >
-          <Volume2 className="h-6 w-6 sm:h-5 sm:w-5" />
+          <Volume2 className={isMobile ? 'h-7 w-7' : 'h-6 w-6 sm:h-5 sm:w-5'} />
           {messages.filter(m => m.sender === 'kiia').length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 sm:h-5 sm:w-5 flex items-center justify-center">
+            <span className={isMobile ? 'absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold' : 'absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 sm:h-5 sm:w-5 flex items-center justify-center'}>
               {messages.filter(m => m.sender === 'kiia').length}
             </span>
           )}
